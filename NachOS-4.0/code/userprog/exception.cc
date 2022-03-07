@@ -25,7 +25,6 @@
 #include "main.h"
 #include "syscall.h"
 #include "ksyscall.h"
-#include "synchconsole.h"
 
 #define MaxFileLength 32
 
@@ -118,31 +117,63 @@ void IncreasePC() {
 
 
 void Handle_SC_ReadNum() {
-	char* buffer;
-	int MAX_BUFFER = 255;
-	buffer = new char[MAX_BUFFER + 1];
+	int num;
+	num = SysReadNum();
+	kernel->machine->WriteRegister(2, (int)num);
 
-
+	IncreasePC();
+	return;
 }
 
 void Handle_SC_PrintNum() {
+	int num = (int)kernel->machine->ReadRegister(4);
+	SysPrintNum(num);
 
+	IncreasePC();
+	return;
 }
 
 void Handle_SC_ReadChar() {
+	char ch;
+	ch = SysReadChar();
+	kernel->machine->WriteRegister(2, ch);
 
+	IncreasePC();
+	return;
 }
 
 void Handle_SC_PrintChar() {
+	char ch = (char)kernel->machine->ReadRegister(4);
+	SysPrintChar(ch);
 
+	IncreasePC();
+	return;
 }
 
 void Handle_SC_ReadString() {
+	int virAddr;
+	char* buffer;
+	int len;
 
+	virAddr = kernel->machine->ReadRegister(4);
+	len = kernel->machine->ReadRegister(5);
+	buffer = User2System(virAddr, len);
+	SysReadString(buffer, len);
+	System2User(virAddr, len, buffer);
+	delete buffer;
+
+	IncreasePC();
+	return;
 }
 
 void Handle_SC_PrintString() {
+	int virAddr = kernel->machine->ReadRegister(4);
+	char* buffer = User2System(virAddr, 255);
+	SysPrintString(buffer);
+	delete buffer;
 
+	IncreasePC();
+	return;
 }
 
 void
@@ -257,17 +288,28 @@ ExceptionHandler(ExceptionType which)
 				
 				case SC_ReadNum:
 					Handle_SC_ReadNum();
+					ASSERTNOTREACHED();
+            		break;
 				case SC_PrintNum:
 					Handle_SC_PrintNum();
+					ASSERTNOTREACHED();
+            		break;
 				case SC_ReadChar:
 					Handle_SC_ReadChar();
+					ASSERTNOTREACHED();
+            		break;
 				case SC_PrintChar:
 					Handle_SC_PrintChar();
+					ASSERTNOTREACHED();
+            		break;
 				case SC_ReadString:
 					Handle_SC_ReadString();
+					ASSERTNOTREACHED();
+            		break;
 				case SC_PrintString:
 					Handle_SC_PrintString();
-
+					ASSERTNOTREACHED();
+            		break;
       			default:
 					cerr << "Unexpected system call " << type << "\n";
 					break;

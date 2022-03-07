@@ -12,6 +12,9 @@
 #define __USERPROG_KSYSCALL_H__ 
 
 #include "kernel.h"
+#include "machine.h"
+#include "synchconsole.h"
+#include "filesys.h"
 
 
 
@@ -28,8 +31,103 @@ int SysAdd(int op1, int op2)
 }
 
 
+int SysReadNum() {
+    long long num = 0;
+    char buffer;
+    bool isNegative = false;
+    bool isInteger = true;
 
 
+    do {
+        buffer = kernel->synchConsoleIn->GetChar();
+    } while (buffer == ' ' || buffer == '\n');
+
+    if (buffer == '-') {
+      isNegative = true;
+      buffer = kernel->synchConsoleIn->GetChar();
+      if (buffer == '\n' || buffer == ' ')
+        return 0;
+    }
+
+    if (!(buffer >= '0' && buffer <= '9')) {
+      isInteger = false;
+    }
+
+    do {
+      num = num * 10 + buffer - '0';
+      buffer = kernel->synchConsoleIn->GetChar();
+
+      if (!(buffer >= '0' && buffer <= '9') && buffer != '\n' && buffer != ' ') {
+        isInteger = false;
+      }
+    } while (buffer != '\n' && buffer != ' ');
+
+
+    if (!isInteger) return 0;
+    if (isNegative) num = -num;
+
+    if (num > INT32_MAX || num < INT32_MIN) return 0;
+
+    return num;
+    
+}
+
+void SysPrintNum(int num) {
+    char arr[10];
+    int i = 0;
+    int tmp, j;
+
+    if (num == 0) {
+      kernel->synchConsoleOut->PutChar('0');
+      return;
+    }
+
+    if (num < 0) {
+      num = -num;
+    }
+
+    while (num != 0) {
+      tmp = num % 10;
+      arr[i] = tmp;
+      i++;
+      num /= 10;
+    }
+
+    for (j = i - 1; j >= 0; j--) {
+      kernel->synchConsoleOut->PutChar('0' + arr[j]);
+    }
+}
+
+char SysReadChar() {
+    char buffer;
+    buffer = kernel->synchConsoleIn->GetChar();
+    return buffer;
+}
+
+void SysPrintChar(char c) {
+    kernel->synchConsoleOut->PutChar(c);
+}
+
+void SysReadString(char* str, int len) {
+    int i = 0;
+    char buffer;
+    for (i = 0; i < len; i++) {
+      str[i] = 0;
+    }
+    i = 0;
+    while (i < len) {
+      buffer = kernel->synchConsoleIn->GetChar();
+      if (buffer == EOF) break;
+      else if (buffer == '\001' || buffer == '\n') break;
+      str[i++] = buffer; 
+    }
+}
+void SysPrintString(char* str) {
+    int len = 0;
+    while (str[len]) {
+      kernel->synchConsoleOut->PutChar(str[len++]);
+    }
+}
 
 
 #endif /* ! __USERPROG_KSYSCALL_H__ */

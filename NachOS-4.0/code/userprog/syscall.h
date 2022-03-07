@@ -48,9 +48,9 @@
 #define SC_PrintNum    17
 #define SC_ReadChar    18
 #define SC_PrintChar   19
-#define SC_RandomNum   20
-#define SC_ReadString  21
-#define SC_PrintString 22
+//#define SC_RandomNum   20
+#define SC_ReadString  20
+#define SC_PrintString 21
 
 
 #ifndef IN_ASM
