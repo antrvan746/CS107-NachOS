@@ -3216,7 +3216,8 @@ exception.o: ../userprog/exception.cc /usr/include/stdc-predef.h \
  ../threads/scheduler.h ../lib/list.h ../lib/list.cc \
  ../machine/interrupt.h ../machine/callback.h ../machine/stats.h \
  ../threads/alarm.h ../machine/timer.h ../userprog/syscall.h \
- ../userprog/errno.h ../userprog/ksyscall.h
+ ../userprog/errno.h ../userprog/ksyscall.h ../userprog/synchconsole.h \
+ ../machine/console.h ../threads/synch.h
 synchconsole.o: ../userprog/synchconsole.cc /usr/include/stdc-predef.h \
  ../lib/copyright.h ../userprog/synchconsole.h ../lib/utility.h \
  ../machine/callback.h ../machine/console.h ../threads/synch.h \
