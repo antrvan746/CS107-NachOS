@@ -229,7 +229,7 @@ ExceptionHandler(ExceptionType which)
 				// 	delete filename;
 				// 	break;
 				
-				case SC_ReadNum:
+				case SC_ReadNum: {
 					int num;
 					num = SysReadNum();
 					kernel->machine->WriteRegister(2, (int)num);
@@ -239,8 +239,8 @@ ExceptionHandler(ExceptionType which)
 					
 					ASSERTNOTREACHED();
             		break;
-
-				case SC_PrintNum:
+				}
+				case SC_PrintNum: {
 					int num2;
 					num2 = (int)kernel->machine->ReadRegister(4);
 					SysPrintNum(num2);
@@ -250,7 +250,16 @@ ExceptionHandler(ExceptionType which)
 					
 					ASSERTNOTREACHED();
             		break;
-				case SC_ReadChar:
+				}
+				case SC_RandomNum: {
+					kernel->machine->WriteRegister(2, SysRandomNum());
+
+					IncreasePC();
+					return;
+					ASSERTNOTREACHED();
+					break;
+				}
+				case SC_ReadChar: {
 					char ch;
 					ch = SysReadChar();
 					kernel->machine->WriteRegister(2, ch);
@@ -259,8 +268,9 @@ ExceptionHandler(ExceptionType which)
 					return;
 
 					ASSERTNOTREACHED();
-            		break;
-				case SC_PrintChar:
+            		break; 
+				}
+				case SC_PrintChar: {
 					char ch2;
 					ch2 = (char)kernel->machine->ReadRegister(4);
 					SysPrintChar(ch2);
@@ -270,15 +280,12 @@ ExceptionHandler(ExceptionType which)
 
 					ASSERTNOTREACHED();
             		break;
+				}
 
-				case SC_ReadString:
-					int virAddr;
-					char* buffer;
-					int len;
-
-					virAddr = kernel->machine->ReadRegister(4);
-					len = kernel->machine->ReadRegister(5);
-					buffer = User2System(virAddr, len);
+				case SC_ReadString: {
+					int virAddr = kernel->machine->ReadRegister(4);
+					int len = kernel->machine->ReadRegister(5);
+					char* buffer = User2System(virAddr, len);
 					SysReadString(buffer, len);
 					System2User(virAddr, len, buffer);
 					delete buffer;
@@ -288,20 +295,21 @@ ExceptionHandler(ExceptionType which)
 
 					ASSERTNOTREACHED();
             		break;
+				}
 
-				case SC_PrintString:
-					int virAddr2;
-					char* buffer2;
-					virAddr2 = kernel->machine->ReadRegister(4);
-					buffer2 = User2System(virAddr2, 255);
-					SysPrintString(buffer);
-					delete[] buffer2;
+				case SC_PrintString: {
+					int virtualAddr2 = kernel->machine->ReadRegister(4); // get address of buffer
+            		char *buffer2 = User2System(virtualAddr2, 255);       // copy string (max 255 byte) from User space to Kernel space
+            		SysPrintString(buffer2);                             // print string
+            		delete[] buffer2;
 
-					IncreasePC();
-					return;
+            		IncreasePC();
+            		return;
 
-					ASSERTNOTREACHED();
+            		ASSERTNOTREACHED();
             		break;
+				}
+
       			default:
 					cerr << "Unexpected system call " << type << "\n";
 					break;
