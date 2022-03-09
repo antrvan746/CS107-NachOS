@@ -1,7 +1,8 @@
 #include "syscall.h"
 
 int main() {
-    SysPrintChar(SysReadChar());
+    char ch = ReadChar();
+    PrintChar(ch);
 
     Halt();
 }

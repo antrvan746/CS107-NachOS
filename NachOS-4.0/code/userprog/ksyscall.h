@@ -17,8 +17,6 @@
 #include "filesys.h"
 
 
-
-
 void SysHalt()
 {
   kernel->interrupt->Halt();
@@ -96,6 +94,7 @@ void SysPrintNum(int num) {
     for (j = i - 1; j >= 0; j--) {
       kernel->synchConsoleOut->PutChar('0' + arr[j]);
     }
+
 }
 
 char SysReadChar() {
@@ -108,24 +107,25 @@ void SysPrintChar(char c) {
     kernel->synchConsoleOut->PutChar(c);
 }
 
-void SysReadString(char* str, int len) {
+void SysReadString(char* buffer, int len) {
     int i = 0;
-    char buffer;
-    for (i = 0; i < len; i++) {
-      str[i] = 0;
+    char ch;
+    for (i = 0; i < len; ++i) {
+      buffer[i] = 0;
     }
-    i = 0;
-    while (i < len) {
-      buffer = kernel->synchConsoleIn->GetChar();
-      if (buffer == EOF) break;
-      else if (buffer == '\001' || buffer == '\n') break;
-      str[i++] = buffer; 
+    for (i = 0; i < len;) {
+      do {
+      ch = kernel->synchConsoleIn->GetChar();
+      } while (ch == EOF);
+      
+      if (ch == '\001' || ch == '\n') break;
+      buffer[i++] = ch; 
     }
 }
-void SysPrintString(char* str) {
+void SysPrintString(char* buffer) {
     int len = 0;
-    while (str[len]) {
-      kernel->synchConsoleOut->PutChar(str[len++]);
+    while (buffer[len]) {
+      kernel->synchConsoleOut->PutChar(buffer[len++]);
     }
 }
 

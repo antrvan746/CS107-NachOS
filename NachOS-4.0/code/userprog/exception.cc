@@ -107,74 +107,17 @@ int System2User(int virtAddr, int len, char* buffer) {
 
 // Increase PC
 void IncreasePC() {
-	int counter = kernel->machine->ReadRegister(PCReg);
-	kernel->machine->WriteRegister(PrevPCReg, counter);
-	counter = kernel->machine->ReadRegister(NextPCReg);
-	kernel->machine->WriteRegister(PCReg, counter);
-	kernel->machine->WriteRegister(NextPCReg, counter + 4);
+    /* set previous program counter (debugging only)*/
+    kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
+
+    /* set program counter to next instruction (all Instructions are 4 byte wide)*/
+    kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
+
+    /* set next program counter for brach execution */
+    kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
 }
 
 
-
-void Handle_SC_ReadNum() {
-	int num;
-	num = SysReadNum();
-	kernel->machine->WriteRegister(2, (int)num);
-
-	IncreasePC();
-	return;
-}
-
-void Handle_SC_PrintNum() {
-	int num = (int)kernel->machine->ReadRegister(4);
-	SysPrintNum(num);
-
-	IncreasePC();
-	return;
-}
-
-void Handle_SC_ReadChar() {
-	char ch;
-	ch = SysReadChar();
-	kernel->machine->WriteRegister(2, ch);
-
-	IncreasePC();
-	return;
-}
-
-void Handle_SC_PrintChar() {
-	char ch = (char)kernel->machine->ReadRegister(4);
-	SysPrintChar(ch);
-
-	IncreasePC();
-	return;
-}
-
-void Handle_SC_ReadString() {
-	int virAddr;
-	char* buffer;
-	int len;
-
-	virAddr = kernel->machine->ReadRegister(4);
-	len = kernel->machine->ReadRegister(5);
-	buffer = User2System(virAddr, len);
-	SysReadString(buffer, len);
-	System2User(virAddr, len, buffer);
-	delete buffer;
-
-	IncreasePC();
-	return;
-}
-
-void Handle_SC_PrintString() {
-	int virAddr = kernel->machine->ReadRegister(4);
-	char* buffer = User2System(virAddr, 255);
-	SysPrintString(buffer);
-	delete buffer;
-
-	IncreasePC();
-	return;
-}
 
 void
 ExceptionHandler(ExceptionType which)
@@ -231,27 +174,27 @@ ExceptionHandler(ExceptionType which)
 					ASSERTNOTREACHED();
 					break;
 
-      			// case SC_Add:
-				// 	DEBUG(dbgSys, "Add " << kernel->machine->ReadRegister(4) << " + " << kernel->machine->ReadRegister(5) << "\n");
-				// 	/* Process SysAdd Systemcall*/
-				// 	int result;
-				// 	result = SysAdd(/* int op1 */(int)kernel->machine->ReadRegister(4),
-				// 	/* int op2 */(int)kernel->machine->ReadRegister(5));
-				// 	DEBUG(dbgSys, "Add returning with " << result << "\n");
-				// 	/* Prepare Result */
-				// 	kernel->machine->WriteRegister(2, (int)result);
-				// 	/* Modify return point */
-				// 	{
-	  			// 	/* set previous programm counter (debugging only)*/
-	  			// 	kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
-	  			// 	/* set programm counter to next instruction (all Instructions are 4 byte wide)*/
-	  			// 	kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
-	  			// 	/* set next programm counter for brach execution */
-	  			// 	kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg)+4);
-				// 	}
-				// 	return;
-				// 	ASSERTNOTREACHED();
-				// 	break;
+      			case SC_Add:
+					DEBUG(dbgSys, "Add " << kernel->machine->ReadRegister(4) << " + " << kernel->machine->ReadRegister(5) << "\n");
+					/* Process SysAdd Systemcall*/
+					int result;
+					result = SysAdd(/* int op1 */(int)kernel->machine->ReadRegister(4),
+					/* int op2 */(int)kernel->machine->ReadRegister(5));
+					DEBUG(dbgSys, "Add returning with " << result << "\n");
+					/* Prepare Result */
+					kernel->machine->WriteRegister(2, (int)result);
+					/* Modify return point */
+					{
+	  				/* set previous programm counter (debugging only)*/
+	  				kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
+	  				/* set programm counter to next instruction (all Instructions are 4 byte wide)*/
+	  				kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
+	  				/* set next programm counter for brach execution */
+	  				kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg)+4);
+					}
+					return;
+					ASSERTNOTREACHED();
+					break;
 				// 	case SC_Create: 
 				// 	int virtAddr;
 				// 	char* filename;
@@ -287,27 +230,76 @@ ExceptionHandler(ExceptionType which)
 				// 	break;
 				
 				case SC_ReadNum:
-					Handle_SC_ReadNum();
+					int num;
+					num = SysReadNum();
+					kernel->machine->WriteRegister(2, (int)num);
+
+					IncreasePC();
+					return;
+					
 					ASSERTNOTREACHED();
             		break;
+
 				case SC_PrintNum:
-					Handle_SC_PrintNum();
+					int num2;
+					num2 = (int)kernel->machine->ReadRegister(4);
+					SysPrintNum(num2);
+
+					IncreasePC();
+					return;
+					
 					ASSERTNOTREACHED();
             		break;
 				case SC_ReadChar:
-					Handle_SC_ReadChar();
+					char ch;
+					ch = SysReadChar();
+					kernel->machine->WriteRegister(2, ch);
+
+					IncreasePC();
+					return;
+
 					ASSERTNOTREACHED();
             		break;
 				case SC_PrintChar:
-					Handle_SC_PrintChar();
+					char ch2;
+					ch2 = (char)kernel->machine->ReadRegister(4);
+					SysPrintChar(ch2);
+
+					IncreasePC();
+					return;
+
 					ASSERTNOTREACHED();
             		break;
+
 				case SC_ReadString:
-					Handle_SC_ReadString();
+					int virAddr;
+					char* buffer;
+					int len;
+
+					virAddr = kernel->machine->ReadRegister(4);
+					len = kernel->machine->ReadRegister(5);
+					buffer = User2System(virAddr, len);
+					SysReadString(buffer, len);
+					System2User(virAddr, len, buffer);
+					delete buffer;
+
+					IncreasePC();
+					return;
+
 					ASSERTNOTREACHED();
             		break;
+
 				case SC_PrintString:
-					Handle_SC_PrintString();
+					int virAddr2;
+					char* buffer2;
+					virAddr2 = kernel->machine->ReadRegister(4);
+					buffer2 = User2System(virAddr2, 255);
+					SysPrintString(buffer);
+					delete[] buffer2;
+
+					IncreasePC();
+					return;
+
 					ASSERTNOTREACHED();
             		break;
       			default:
