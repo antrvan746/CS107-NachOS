@@ -6,8 +6,8 @@ int main(){
     PrintString("=================================================================\n");
     PrintString("Group Member: \n");
     PrintString("20127435 - Tran Van An\n");
-    PrintString("2012xxxx - Cai Minh Chanh\n");
-    PrintString("2012xxxx - Nguyen Vinh Quang\n");
+    PrintString("20127453 - Cai Minh Chanh\n");
+    PrintString("20127606 - Nguyen Vinh Quang\n");
     PrintString("=================================================================\n");
 
 // gioi thieu ve chuong trinh ascii va sort
