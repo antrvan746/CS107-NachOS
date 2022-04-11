@@ -283,7 +283,17 @@ FileSystem::Remove(char *name)
     delete directory;
     delete freeMap;
     return TRUE;
-} 
+}
+
+//Ham tim slot trong
+int FileSystem::FindFreeSlot()
+{
+	for(int i = 2; i < 15; i++)
+	{
+		if(openf[i] == NULL) return i;		
+	}
+	return -1;
+}
 
 //----------------------------------------------------------------------
 // FileSystem::List

@@ -117,3 +117,65 @@ SynchConsoleOutput::CallBack()
 {
     waitFor->V();
 }
+
+int
+SynchConsoleInput::Read(char *into, int numBytes)
+{
+	int loop;
+	int eolncond = FALSE;
+	char ch;
+
+	for (loop = 0; loop < numBytes; loop++)
+		into[loop] = 0;
+
+	loop = 0;
+
+	RLineBlock->P();				// Block for a read line
+
+//	printf("{%s}:\n",currentThread->getName());	// DEBUG print thread
+
+	while ( (loop < numBytes) && (eolncond == FALSE) )
+	{
+		do
+		{
+			waitFor->P();		// Block for single char
+			ch = consoleInput->GetChar();		// Get a char (could)
+		} while ( ch == EOF);
+		
+		if ( (ch == '\012') || (ch == '\001') )
+		{
+			eolncond = TRUE;
+		}
+		else
+		{
+			into[loop] = ch;		// Put the char in buf
+			loop++;				// Auto inc
+		}
+	}
+
+	RLineBlock->V();				// UnBLock
+
+	if (ch == '\001')				// CTRL-A Returns -1
+		return -1;				// For end of stream
+	else
+		return loop;				// How many did we rd
+}
+
+
+int SynchConsoleOutput::Write(char *from, int numBytes)
+{
+	int loop;			// General purpose counter
+
+	WLineBlock->P();			// Block for the line
+
+//	printf("[%s]:\n",currentThread->getName());	//DEBUG: Print thread
+
+	for (loop = 0; loop < numBytes; loop++)
+	{
+		consoleOutput->PutChar(from[loop]);		// Write and wait
+		waitFor->P();			// Block for a character
+	}
+
+	WLineBlock->V();				// Free Up
+	return numBytes;				// Return the bytes out
+}

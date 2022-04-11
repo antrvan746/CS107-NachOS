@@ -195,39 +195,6 @@ ExceptionHandler(ExceptionType which)
 					return;
 					ASSERTNOTREACHED();
 					break;
-				// 	case SC_Create: 
-				// 	int virtAddr;
-				// 	char* filename;
-				// 	DEBUG('a', "\n SC_Create call ...");
-				// 	DEBUG('a', "\n Reading virtual address of filename");
-				// 	// Lay tham so tu thanh ghi R4
-				// 	virtAddr = (int)kernel->machine->ReadRegister(4);
-				// 	DEBUG('a', "\n Reading filename.");
-				// 	// MaxLengthFile la = 32
-				// 	filename = User2System(virtAddr, MaxFileLength+1);
-				// 	if (filename == NULL) {
-				// 		printf("\n Not enough memory in system");
-				// 		DEBUG('a', "\n Not enough memory in system");
-				// 		kernel->machine->WriteRegister(2,-1); //Tra ve loi cho chuong tirnh nguoi dung
-				// 		delete filename;
-				// 		return;
-				// 	}
-				// 	DEBUG(dbgFile, "\nFinish reading filename.");
-				// 	// Create file with size = 0
-				// 	// Dùng đối tượng fileSystem của lớp OpenFile để tạo file,
-				// 	// việc tạo file này là sử dụng các thủ tục tạo file của hệ điều
-				// 	// hành Linux, chúng ta không quản ly trực tiếp các block trên
-				// 	// đĩa cứng cấp phát cho file, việc quản ly các block của file
-				// 	// trên ổ đĩa là một đồ án khác
-				// 	if (!kernel->fileSystem->Create(filename,0)) {
-				// 		printf("\n Error create file '%s'", filename);
-				// 		kernel->machine->WriteRegister(2, -1);
-				// 		delete filename;
-				// 		return;
-				// 	}
-				// 	kernel->machine->WriteRegister(2, 0); // Tra ve cho chuong trinh nguoi dung thanh cong
-				// 	delete filename;
-				// 	break;
 				
 				case SC_ReadNum: {
 					int num;
@@ -308,6 +275,86 @@ ExceptionHandler(ExceptionType which)
 
             		ASSERTNOTREACHED();
             		break;
+				}
+
+				// Xu ly Syscall CreateFile tao file
+				case SC_Create: {
+
+					// Tao ra file voi tham so la ten file
+					int virtAddr;
+					char* filename;
+					// Doc dia chi ten file tu thanh ghi r4 
+					virtAddr = kernel->machine->ReadRegister(4);
+
+					// Chuyen dia chi ten file tu UserSpace sang SystemSpace
+					filename = User2System(virtAddr, MaxFileLength + 1);
+					SysCreateFile(filename);
+					delete[] filename;
+
+					IncreasePC();
+					return;
+					// Tao file thanh cong
+				}
+
+				case SC_Open: {
+					
+					int virtAddr = kernel->machine->ReadRegister(4);
+					int type = kernel->machine->ReadRegister(5);
+					OpenFileId res;
+
+					char* filename;
+					filename = User2System(virtAddr, MaxFileLength + 1);
+					OpenFileId res = SysOpen(filename, type);
+					// Mo file, tra ve id neu thanh cong, tra ve -1 neu that bai
+					kernel->machine->WriteRegister(2, res);
+					delete[] filename;
+					IncreasePC();
+					return;
+					break;
+				}
+
+				case SC_Close: {
+					OpenFileID fid;
+					int res;
+					fid = kernel->machine->ReadRegister(4);
+					int res = SysClose(fid);
+					IncreasePC();
+					return;
+					break;
+				}
+				case SC_Read: {
+					int virtAddr;
+					int size;
+					OpenFileID id;
+
+					virtAddr = kernel->machine->ReadRegister(4);
+					size = kernel->machine->ReadRegister(5);
+					id = kernel->machine->ReadRegister(6);
+
+					char* buffer = User2System(virtAddr, size);
+
+					int res = SysRead(buffer, size, id);
+
+					kernel->machine->WriteRegister(2, res);
+					if (res != -1 && res != -2) {
+						System2User(virtAddr, res, buffer);
+					}
+					delete buffer;
+					IncreasePC();
+					return;
+
+				}
+
+				case SC_Write: {
+					
+				}
+
+				case SC_Seek: {
+
+				}
+
+				case SC_Remove: {
+
 				}
 
       			default:
