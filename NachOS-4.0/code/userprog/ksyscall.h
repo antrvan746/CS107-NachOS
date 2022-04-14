@@ -187,6 +187,7 @@ OpenFileId SysOpen(char* filename, int type) {
 
   OpenFile *file;
   freeSlot = kernel->fileSystem->FindFreeSlot();
+  
   if (type == INPUT_TYPE) {
     kernel->machine->WriteRegister(2, 0);
   } 
@@ -251,15 +252,73 @@ int SysRead(char* buffer, int charcount, OpenFileID id) {
 }
 
 int SysWrite(char* buffer, int charcount, OpenFileID id) {
+  int OldPos;
+  int NewPos;
+
+  if (id < 0 || id > 14) {
+    printf("\nKhong the ghi vi id nam ngoai bang mo ta file.");
+    return -1;
+  }
+
+  if (kernel->fileSystem->openf[id] == NULL) {
+    printf("\nKhong the ghi vi file nay khong ton tai.");
+		return -1;
+  }
+
+  if (kernel->fileSystem->openf[id]->type == 1 || kernel->fileSystem->openf[id]->type == 2) {
+    printf("\nKhong the write file stdin hoac file only read.");
+		return -1;
+  }
+
+  OldPos = kernel->fileSystem->openf[id]->GetCurrentPos();
+  if (kernel->fileSystem->openf[id]->type == 0) {
+    if (kernel->fileSystem->openf[id]->Write(buffer, charcount) > 0) {
+        NewPos = kernel->fileSystem->openf[id]->GetCurrentPos();
+        return NewPos-OldPos;
+    }
+  }
+  if (kernel->fileSystem->openf[id]->type == 3) {
+    int i = 0;
+    while (buffer[i] != 0 && buffer[i] != '\n') {
+      kernel->synchConsoleOut->Write(buffer + i, 1);
+      i++;
+    }
+    buffer[i] = '\n';
+    kernel->synchConsoleOut->Write(buffer+i, 1);
+    return i - 1;
+  }
+
 
 }
 
 int SysSeek(int pos, OpenFileID id) {
-
+  if (id < 0 || id > 14) {
+    printf("\nKhong the seek vi id nam ngoai bang mo ta file.");
+    return -1;
+  }
+  if (kernel->fileSystem->openf[id] == NULL) {
+    printf("\nKhong the seek vi file nay khong ton tai.");
+    return -1;
+  }
+  if (id == 0 || id == 1) {
+    printf("\nKhong the seek tren file console.");
+    return -1;
+  }
+  pos = (pos == -1) ? kernel->fileSystem->openf[id]->Length() : pos;
+  if (pos > kernel->fileSystem->openf[id]->Length() || pos < 0) {
+    printf("Khong the seek den vi tri nay.");
+    return -1;
+  }
+  else {
+    kernel->fileSystem->openf[id]->Seek(pos);
+    return pos;
+  }
 }
 
 int SysRemove(char* filename) {
-
+  int res;
+  res = kernel->fileSystem->Remove(filename);
+  return res;
 }
 
 

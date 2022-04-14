@@ -294,6 +294,9 @@ ExceptionHandler(ExceptionType which)
 					IncreasePC();
 					return;
 					// Tao file thanh cong
+
+					ASSERTNOTREACHED();
+            		break;
 				}
 
 				case SC_Open: {
@@ -310,7 +313,9 @@ ExceptionHandler(ExceptionType which)
 					delete[] filename;
 					IncreasePC();
 					return;
-					break;
+					
+					ASSERTNOTREACHED();
+            		break;
 				}
 
 				case SC_Close: {
@@ -320,7 +325,9 @@ ExceptionHandler(ExceptionType which)
 					int res = SysClose(fid);
 					IncreasePC();
 					return;
-					break;
+					
+					ASSERTNOTREACHED();
+            		break;
 				}
 				case SC_Read: {
 					int virtAddr;
@@ -343,18 +350,77 @@ ExceptionHandler(ExceptionType which)
 					IncreasePC();
 					return;
 
+					ASSERTNOTREACHED();
+            		break;
+
 				}
 
 				case SC_Write: {
-					
+					int virtAddr;
+					int size;
+					int id;
+					char* buffer;
+					int res;
+
+					// Doc cac tham so dau vao
+					virtAddr = kernel->machine->ReadRegister(4);
+					size = kernel->machine->ReadRegister(5);
+					id = kernel->machine->ReadRegister(6);
+
+					// Lay du lieu
+					buffer = User2System(virtAddr, size);
+
+					// Ghi vao file
+					res = SysWrite(buffer, size, id);
+
+					// Ghi ket qua tra ve
+					kernel->machine->WriteRegister(2, res);
+
+					delete buffer;
+					IncreasePC();
+					return;
+
+					ASSERTNOTREACHED();
+            		break;					
 				}
 
 				case SC_Seek: {
+					int position;
+					int id;
+					int res;
+					
+					position = kernel->machine->ReadRegister(4);
+					id = kernel->machine->ReadRegister(5);
+
+					// Tim den vi tri va nhan ket qua tra ve
+					res = SysSeek(position, id);
+
+					// Ghi ket qua tra ve
+					kernel->machine->WriteRegister(2, res);
+
+					IncreasePC();
+					return;
+
+					ASSERTNOTREACHED();
+            		break;
 
 				}
 
 				case SC_Remove: {
+					int virtAddr;
+					char* filename;
+					int res;
+					virtAddr = kernel->machine->ReadRegister(4);
 
+					filename = User2System(virtAddr, MaxFileLength + 1);
+					res = Remove(filename);
+
+					kernel->machine->WriteRegister(2, res);
+					IncreasePC();
+					return;
+
+					ASSERTNOTREACHED();
+            		break;					
 				}
 
       			default:
