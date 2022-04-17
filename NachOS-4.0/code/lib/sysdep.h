@@ -16,11 +16,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 using namespace std;
 
 // Process control: abort, exit, and sleep
 extern void Abort();
+// Edit
 extern void Exit(int exitCode);
 extern void Delay(int seconds);
 extern void UDelay(unsigned int usec);// rcgood - to avoid spinners.
@@ -45,6 +47,7 @@ extern bool PollFile(int fd);
 // For simulating the disk and the console devices.
 extern int OpenForWrite(char *name);
 extern int OpenForReadWrite(char *name, bool crashOnError);
+extern int OpenForRead(char* name, bool crashOnError);
 extern void Read(int fd, char *buffer, int nBytes);
 extern int ReadPartial(int fd, char *buffer, int nBytes);
 extern void WriteFile(int fd, char *buffer, int nBytes);

@@ -167,9 +167,8 @@ void SysCreateFile(char* filename) {
 
   
   // Tao file bang ham Create cua fileSystem, tra ve ket qua 
-  if (!kernel->fileSystem->Create(filename, 0)) {
+  if (!kernel->fileSystem->Create(filename)) {
     // Tao file that bai
-
     printf("Error create file '%s'", filename);
     kernel->machine->WriteRegister(2, -1);
     return;
@@ -189,10 +188,10 @@ OpenFileId SysOpen(char* filename, int type) {
   freeSlot = kernel->fileSystem->FindFreeSlot();
   
   if (type == INPUT_TYPE) {
-    kernel->machine->WriteRegister(2, 0);
+    return 0;
   } 
   else if (type == OUTPUT_TYPE) {
-    kernel->machine->WriteRegister(2, 1);
+    return 1;
   }
   else if (freeSlot == -1) {
     file = kernel->fileSystem->Open(filename, type);
@@ -225,9 +224,7 @@ int SysRead(char* buffer, int charcount, OpenFileID id) {
 
    if (id < 0 || id > 14) {
      printf("\nKhong the doc vi id nam ngoai bang mo ta file.");
-     kernel->machine->WriteRegister(2, -1);
-     IncreasePC();
-     return;
+     return -1;
    }
    if (kernel->fileSystem->openf[id] == NULL) {
       printf("\nKhong the doc vi file nay khong can ton tai.");
@@ -256,17 +253,17 @@ int SysWrite(char* buffer, int charcount, OpenFileID id) {
   int NewPos;
 
   if (id < 0 || id > 14) {
-    printf("\nKhong the ghi vi id nam ngoai bang mo ta file.");
+    printf("Khong the ghi vi id nam ngoai bang mo ta file.");
     return -1;
   }
 
   if (kernel->fileSystem->openf[id] == NULL) {
-    printf("\nKhong the ghi vi file nay khong ton tai.");
+    printf("Khong the ghi vi file nay khong ton tai.");
 		return -1;
   }
 
   if (kernel->fileSystem->openf[id]->type == 1 || kernel->fileSystem->openf[id]->type == 2) {
-    printf("\nKhong the write file stdin hoac file only read.");
+    printf("Khong the write file stdin hoac file only read.");
 		return -1;
   }
 

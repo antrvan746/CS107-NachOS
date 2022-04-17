@@ -9,11 +9,11 @@ int main() {
     PrintString("Your String: ");
     PrintString(a);
     PrintString("\nEnter a character: ");
-    b=ReadChar();
+    b = ReadChar();
     PrintString("Your character: ");
     PrintChar(b);
     PrintString("\nEnter a Number: ");
-    c= ReadNum();
+    c = ReadNum();
     PrintString("Your Number: ");
     PrintNum(c);
     PrintString("\n"); 

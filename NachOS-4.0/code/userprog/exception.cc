@@ -281,13 +281,11 @@ ExceptionHandler(ExceptionType which)
 				case SC_Create: {
 
 					// Tao ra file voi tham so la ten file
-					int virtAddr;
-					char* filename;
 					// Doc dia chi ten file tu thanh ghi r4 
-					virtAddr = kernel->machine->ReadRegister(4);
+					int virtAddr = kernel->machine->ReadRegister(4);
 
 					// Chuyen dia chi ten file tu UserSpace sang SystemSpace
-					filename = User2System(virtAddr, MaxFileLength + 1);
+					char* filename = User2System(virtAddr, MaxFileLength + 1);
 					SysCreateFile(filename);
 					delete[] filename;
 
@@ -295,48 +293,34 @@ ExceptionHandler(ExceptionType which)
 					return;
 					// Tao file thanh cong
 
-					ASSERTNOTREACHED();
-            		break;
 				}
 
 				case SC_Open: {
 					
 					int virtAddr = kernel->machine->ReadRegister(4);
 					int type = kernel->machine->ReadRegister(5);
-					OpenFileId res;
-
-					char* filename;
-					filename = User2System(virtAddr, MaxFileLength + 1);
-					OpenFileId res = SysOpen(filename, type);
+				
+					char* filename = User2System(virtAddr, MaxFileLength + 1);
+					OpenFileID res = SysOpen(filename, type);
 					// Mo file, tra ve id neu thanh cong, tra ve -1 neu that bai
 					kernel->machine->WriteRegister(2, res);
 					delete[] filename;
 					IncreasePC();
 					return;
 					
-					ASSERTNOTREACHED();
-            		break;
 				}
 
 				case SC_Close: {
-					OpenFileID fid;
-					int res;
-					fid = kernel->machine->ReadRegister(4);
+					OpenFileID fid = kernel->machine->ReadRegister(4);
 					int res = SysClose(fid);
 					IncreasePC();
 					return;
 					
-					ASSERTNOTREACHED();
-            		break;
 				}
 				case SC_Read: {
-					int virtAddr;
-					int size;
-					OpenFileID id;
-
-					virtAddr = kernel->machine->ReadRegister(4);
-					size = kernel->machine->ReadRegister(5);
-					id = kernel->machine->ReadRegister(6);
+					int virtAddr = kernel->machine->ReadRegister(4);
+					int size = kernel->machine->ReadRegister(5);
+					OpenFileID id = kernel->machine->ReadRegister(6);
 
 					char* buffer = User2System(virtAddr, size);
 
@@ -350,28 +334,19 @@ ExceptionHandler(ExceptionType which)
 					IncreasePC();
 					return;
 
-					ASSERTNOTREACHED();
-            		break;
-
 				}
 
 				case SC_Write: {
-					int virtAddr;
-					int size;
-					int id;
-					char* buffer;
-					int res;
-
 					// Doc cac tham so dau vao
-					virtAddr = kernel->machine->ReadRegister(4);
-					size = kernel->machine->ReadRegister(5);
-					id = kernel->machine->ReadRegister(6);
+					int virtAddr = kernel->machine->ReadRegister(4);
+					int size = kernel->machine->ReadRegister(5);
+					int id = kernel->machine->ReadRegister(6);
 
 					// Lay du lieu
-					buffer = User2System(virtAddr, size);
+					char* buffer = User2System(virtAddr, size);
 
 					// Ghi vao file
-					res = SysWrite(buffer, size, id);
+					int res = SysWrite(buffer, size, id);
 
 					// Ghi ket qua tra ve
 					kernel->machine->WriteRegister(2, res);
@@ -379,21 +354,14 @@ ExceptionHandler(ExceptionType which)
 					delete buffer;
 					IncreasePC();
 					return;
-
-					ASSERTNOTREACHED();
-            		break;					
 				}
 
 				case SC_Seek: {
-					int position;
-					int id;
-					int res;
-					
-					position = kernel->machine->ReadRegister(4);
-					id = kernel->machine->ReadRegister(5);
+					int position = kernel->machine->ReadRegister(4);
+					int id = kernel->machine->ReadRegister(5);
 
 					// Tim den vi tri va nhan ket qua tra ve
-					res = SysSeek(position, id);
+					int res = SysSeek(position, id);
 
 					// Ghi ket qua tra ve
 					kernel->machine->WriteRegister(2, res);
@@ -401,26 +369,17 @@ ExceptionHandler(ExceptionType which)
 					IncreasePC();
 					return;
 
-					ASSERTNOTREACHED();
-            		break;
-
 				}
 
 				case SC_Remove: {
-					int virtAddr;
-					char* filename;
-					int res;
-					virtAddr = kernel->machine->ReadRegister(4);
+					int virtAddr = kernel->machine->ReadRegister(4);
 
-					filename = User2System(virtAddr, MaxFileLength + 1);
-					res = Remove(filename);
+					char* filename = User2System(virtAddr, MaxFileLength + 1);
+					int res = SysRemove(filename);
 
 					kernel->machine->WriteRegister(2, res);
 					IncreasePC();
-					return;
-
-					ASSERTNOTREACHED();
-            		break;					
+					return;					
 				}
 
       			default:
@@ -432,7 +391,7 @@ ExceptionHandler(ExceptionType which)
       		cerr << "Unexpected user mode exception" << (int)which << "\n";
       		break;
     }
-    ASSERTNOTREACHED();
+	ASSERTNOTREACHED()
 }
 
 

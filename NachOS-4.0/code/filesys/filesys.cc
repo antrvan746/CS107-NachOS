@@ -256,6 +256,16 @@ OpenFile* FileSystem::Open(char *name, int type)
 	return openf[freeSlot];				// return NULL if not found
 }
 
+//Ham tim slot trong
+int FileSystem::FindFreeSlot()
+{
+	for(int i = 2; i < MAX_FILE_OPEN; i++)
+	{
+		if(openf[i] == NULL) return i;		
+	}
+	return -1;
+}
+
 //----------------------------------------------------------------------
 // FileSystem::Remove
 // 	Delete a file from the file system.  This requires:
@@ -302,15 +312,7 @@ FileSystem::Remove(char *name)
     return TRUE;
 }
 
-//Ham tim slot trong
-int FileSystem::FindFreeSlot()
-{
-	for(int i = 2; i < 15; i++)
-	{
-		if(openf[i] == NULL) return i;		
-	}
-	return -1;
-}
+
 
 //----------------------------------------------------------------------
 // FileSystem::List

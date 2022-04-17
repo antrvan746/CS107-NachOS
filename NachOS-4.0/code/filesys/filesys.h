@@ -37,15 +37,13 @@
 #include "sysdep.h"
 #include "openfile.h"
 
-#define MAX_FILE_OPEN 10
+#define MAX_FILE_OPEN 15
 #define INPUT_TYPE 1
 #define OUTPUT_TYPE 0
 #define READONLY_TYPE 3
 #define READWRITE_TYPE 2
 #define INDEX_STDIN 1
 #define INDEX_STDOUT 0
-
-typedef int OpenFileID;
 
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 
 				// calls to UNIX, until the real file system
@@ -55,31 +53,33 @@ class FileSystem {
 	OpenFile** openf;
 	int index;
 	
-    FileSystem(bool format) {
-		openf = new OpenFile*[15];
+    FileSystem() {
+		openf = new OpenFile*[MAX_FILE_OPEN];
 		index = 0;
-		for (int i = 0; i < 15; ++i) {
+		for (int i = 0; i < MAX_FILE_OPEN; ++i) {
 			openf[i] = NULL;
 		}
-		this->Create("stdin", 0);
-		this->Create("stdout", 0);
-		openf[index++] = this->Open("stdin", 2);
-		openf[index++] = this->Open("stdout", 3);
+		this->Create("stdin");
+		this->Create("stdout");
+
+		openf[index++] = this->Open("stdin", INPUT_TYPE);
+		openf[index++] = this->Open("stdout", OUTPUT_TYPE);
 	}
 
 	~FileSystem() {
-		for (int i = 0; i < 15; i++) {
+		for (int i = 0; i < MAX_FILE_OPEN; i++) {
 			if (openf[i] != NULL) delete openf[i];
 		}
 		delete[] openf;
 	}
 
     bool Create(char *name) {
-	int fileDescriptor = OpenForWrite(name);
+		int fileDescriptor = OpenForWrite(name);
 
-	if (fileDescriptor == -1) return FALSE;
-	Close(fileDescriptor); 
-	return TRUE; 
+		if (fileDescriptor == -1) 
+			return FALSE;
+		Close(fileDescriptor); 
+			return TRUE; 
 	}
 
     OpenFile* Open(char *name) {
@@ -87,12 +87,18 @@ class FileSystem {
 
 	  if (fileDescriptor == -1) return NULL;
 	  return new OpenFile(fileDescriptor);
-      }
+    }
 
-    bool Remove(char *name) { return Unlink(name) == 0; }
+	OpenFile* Open(char *name, int type) {
+		int fileDescriptor = OpenForReadWrite(name, FALSE);
+
+		if (fileDescriptor == -1) return NULL;
+		//index++;
+		return new OpenFile(fileDescriptor, type);
+	}
 
 	int FindFreeSlot() {
-		for (int i = 2; i < 15; i++) {
+		for (int i = 2; i < MAX_FILE_OPEN; i++) {
 			if (openf[i] == NULL) return i;
 		}
 		return -1;

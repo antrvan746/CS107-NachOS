@@ -24,6 +24,8 @@
 #include "utility.h"
 #include "sysdep.h"
 
+typedef int OpenFileID;
+
 #ifdef FILESYS_STUB			// Temporarily implement calls to 
 					// Nachos file system as calls to UNIX!
 					// See definitions listed under #else
@@ -59,6 +61,12 @@ class OpenFile {
     int Length() { Lseek(file, 0, 2); return Tell(file); }
 
 	int GetCurrentPos() { currentOffset = Tell(file); return currentOffset; }
+
+	int Seek(int pos) {
+		Lseek(file, pos, 0);
+		currentOffset = Tell(file);
+		return currentOffset;
+	};
     
   private:
     int file;
