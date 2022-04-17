@@ -17,6 +17,60 @@
 #include "filesys.h"
 
 
+/*
+Input: - User space address (int)
+- Limit of buffer (int)
+Output:- Buffer (char*)
+Purpose: Copy buffer from User memory space to System memory space
+*/
+
+
+char* User2System(int virtAddr, int limit) {
+	int i;
+	int oneChar;
+	char* kernelBuf = NULL;
+
+	kernelBuf = new char[limit + 1]; // need for terminal string
+	if (kernelBuf == NULL) {
+		return kernelBuf;
+	}
+
+	memset(kernelBuf, 0, limit + 1);
+
+	for (i = 0; i < limit; i++) {
+		kernel->machine->ReadMem(virtAddr + i, 1, &oneChar);
+		kernelBuf[i] = (char)oneChar;
+		if (oneChar == 0) break;
+	}
+
+	return kernelBuf;
+}
+
+
+/*
+Input: - User space address (int)
+- Limit of buffer (int)
+Output:- Buffer (char*)
+Purpose: Copy buffer from System memory space to User memory space
+*/
+
+int System2User(int virtAddr, int len, char* buffer) {
+	if (len < 0) return -1;
+	if (len == 0) return len;
+	int i = 0;
+	int oneChar = 0;
+
+	do {
+		oneChar = (int) buffer[i];
+		kernel->machine->WriteMem(virtAddr+i, 1, oneChar);
+		i++;
+	} while (i < len && oneChar != 0);
+
+	return i;
+	
+}
+
+
 void SysHalt()
 {
   kernel->interrupt->Halt();
@@ -148,8 +202,8 @@ void SysCreateFile(char* filename) {
 
   // Truong hop ten file khong hop le
   if (strlen(filename) <= 0) {
-    printf("Invalid file name!\n");
-    DEBUG('a', "Invalid file name!\n");
+    printf("Khong ton tai file!\n");
+    DEBUG('a', "Khong ton tai file!\n");
 
     // Tra ve gia tri -1 vao thanh ghi R2
     kernel->machine->WriteRegister(2, -1);
@@ -157,18 +211,17 @@ void SysCreateFile(char* filename) {
   }
 
   if (filename == NULL) {
-    printf("Not enough memory in system\n");
-    DEBUG('a', "Not enough memory in system\n");
+    printf("Khong du bo nho\n");
+    DEBUG('a', "Khong du bo nho\n");
 
     // Tra ve gia tri -1 vao thanh ghi R2
-    kernel->machine->WriteRegister(2, -1);
+    kernel->machine->WriteRegister(2, -1); // tao file that bai
     return;
   }
 
   
   // Tao file bang ham Create cua fileSystem, tra ve ket qua 
   if (!kernel->fileSystem->Create(filename)) {
-    // Tao file that bai
     printf("Error create file '%s'", filename);
     kernel->machine->WriteRegister(2, -1);
     return;
@@ -181,27 +234,31 @@ void SysCreateFile(char* filename) {
 
 
 // 2.1 Syscall Open file
-OpenFileId SysOpen(char* filename, int type) {
+void SysOpen(char* filename, int type) {
   int freeSlot;
 
   OpenFile *file;
   freeSlot = kernel->fileSystem->FindFreeSlot();
   
   if (type == INPUT_TYPE) {
-    return 0;
+    // input co nsole stdout => he thong se doc gia tri tren man hinh console
+    kernel->machine->WriteRegister(2, 1);
+    return;
   } 
   else if (type == OUTPUT_TYPE) {
-    return 1;
+    // input co nsole stdout => he thong se doc gia tri tren man hinh console
+    kernel->machine->WriteRegister(2, 1);
+    return;
   }
   else if (freeSlot == -1) {
     file = kernel->fileSystem->Open(filename, type);
 
     if (file != NULL) {
       kernel->fileSystem->openf[freeSlot] = file;
-      return freeSlot;
+      kernel->machine->WriteRegister(2, freeSlot); // mo file thanh cong
     }
   } else {
-    return -1;    
+    kernel->machine->WriteRegister(2, -1);    
   }  
 } 
 
@@ -218,97 +275,119 @@ int SysClose(OpenFileId id) {
 }
 
 
-int SysRead(char* buffer, int charcount, OpenFileID id) {
-   int OldPos;
-   int NewPos;
+void SysRead(int virtAddr, char*& buffer, int charcount, OpenFileID id) {
+   int curPos;
+   int newPos;
 
-   if (id < 0 || id > 14) {
-     printf("\nKhong the doc vi id nam ngoai bang mo ta file.");
-     return -1;
+    // Kiem tra id co nam trong bang mo ta file
+   if (id < 0 || id > MAX_FILE_OPEN - 1) {
+     printf("Khong the doc vi id nam ngoai bang mo ta file.\n");
+     kernel->machine->WriteRegister(2, -1);
+     return;
    }
+
+   // Kiem tra file co ton tai hay khong
    if (kernel->fileSystem->openf[id] == NULL) {
-      printf("\nKhong the doc vi file nay khong can ton tai.");
-      return -1;
+      printf("\nKhong the doc vi file nay khong can ton tai.\n");
+      kernel->machine->WriteRegister(2, -1);
+      return;
    }
-   if (kernel->fileSystem->openf[id]->type == 3) {
-      printf("\nKhong the doc file stdout.");
-      return -1;
+
+   // Kiem tra truong hop doc file stdout
+   if (id == INDEX_STDOUT) {
+      printf("Khong the doc file stdout.\n");
+      kernel->machine->WriteRegister(2, -1);
+      return;
    }
-   OldPos = kernel->fileSystem->openf[id]->GetCurrentPos();
-   if (kernel->fileSystem->openf[id]->type == 2) {
+
+   curPos = kernel->fileSystem->openf[id]->GetCurrentPos();
+   if (id == INDEX_STDIN) {
       int size = kernel->synchConsoleIn->Read(buffer, charcount);
-      return size;
+      System2User(virtAddr, size, buffer);
+      kernel->machine->WriteRegister(2, size);
+      return;
    }
    if ((kernel->fileSystem->openf[id]->Read(buffer, charcount)) > 0) {
-      NewPos = kernel->fileSystem->openf[id]->GetCurrentPos();
-      return NewPos - OldPos;
+      newPos = kernel->fileSystem->openf[id]->GetCurrentPos();
+      kernel->machine->WriteRegister(2, newPos - curPos);
+      System2User(virtAddr, newPos - curPos, buffer);
    }
    else {
-      return -2;
+      kernel->machine->WriteRegister(2, -2);
+      return;
    }
 }
 
-int SysWrite(char* buffer, int charcount, OpenFileID id) {
-  int OldPos;
-  int NewPos;
+void SysWrite(int virtAddr, char*& buffer, int charcount, OpenFileID id) {
+  int curPos;
+  int newPos;
 
-  if (id < 0 || id > 14) {
-    printf("Khong the ghi vi id nam ngoai bang mo ta file.");
-    return -1;
+  if (id < 0 || id > MAX_FILE_OPEN - 1) {
+    printf("Khong the ghi vi id nam ngoai bang mo ta file.\n");
+    kernel->machine->WriteRegister(2, -1);
+    return;
   }
 
   if (kernel->fileSystem->openf[id] == NULL) {
-    printf("Khong the ghi vi file nay khong ton tai.");
-		return -1;
+    printf("Khong the ghi vi file nay khong ton tai.\n");
+    kernel->machine->WriteRegister(2, -1);
+		return;
   }
 
-  if (kernel->fileSystem->openf[id]->type == 1 || kernel->fileSystem->openf[id]->type == 2) {
-    printf("Khong the write file stdin hoac file only read.");
-		return -1;
+  if (kernel->fileSystem->openf[id]->type == READONLY_TYPE || kernel->fileSystem->openf[id]->type == INDEX_STDIN) {
+    printf("Khong the write file stdin hoac file only read.\n");
+    kernel->machine->WriteRegister(2, -1);
+		return;
   }
 
-  OldPos = kernel->fileSystem->openf[id]->GetCurrentPos();
-  if (kernel->fileSystem->openf[id]->type == 0) {
+  curPos = kernel->fileSystem->openf[id]->GetCurrentPos();
+  buffer = User2System(virtAddr, charcount);
+
+  if (kernel->fileSystem->openf[id]->type == READWRITE_TYPE) {
     if (kernel->fileSystem->openf[id]->Write(buffer, charcount) > 0) {
-        NewPos = kernel->fileSystem->openf[id]->GetCurrentPos();
-        return NewPos-OldPos;
+        newPos = kernel->fileSystem->openf[id]->GetCurrentPos();
+        kernel->machine->WriteRegister(2, newPos - curPos);
+        return;
     }
   }
-  if (kernel->fileSystem->openf[id]->type == 3) {
-    int i = 0;
-    while (buffer[i] != 0 && buffer[i] != '\n') {
-      kernel->synchConsoleOut->Write(buffer + i, 1);
-      i++;
+  if (id == INDEX_STDOUT) {
+    int pos = 0;
+    while (buffer[pos] != '\0') {
+      kernel->synchConsoleOut->PutChar((buffer + pos)[0]);
+      pos++;
     }
-    buffer[i] = '\n';
-    kernel->synchConsoleOut->Write(buffer+i, 1);
-    return i - 1;
+    kernel->machine->WriteRegister(2, pos -1);
+    return;
   }
-
-
 }
 
-int SysSeek(int pos, OpenFileID id) {
-  if (id < 0 || id > 14) {
-    printf("\nKhong the seek vi id nam ngoai bang mo ta file.");
-    return -1;
+void SysSeek(int pos, OpenFileID id) {
+  if (id < 0 || id > MAX_FILE_OPEN - 1) {
+    printf("Khong the seek vi id nam ngoai bang mo ta file.\n");
+    kernel->machine->WriteRegister(2, -1);
+    return;
+    
   }
   if (kernel->fileSystem->openf[id] == NULL) {
-    printf("\nKhong the seek vi file nay khong ton tai.");
-    return -1;
+    printf("Khong the seek vi file nay khong ton tai.\n");
+    kernel->machine->WriteRegister(2, -1);
+    return;
   }
   if (id == 0 || id == 1) {
-    printf("\nKhong the seek tren file console.");
-    return -1;
+    printf("Khong the seek tren file console.\n");
+    kernel->machine->WriteRegister(2, -1);
+    return;
   }
   pos = (pos == -1) ? kernel->fileSystem->openf[id]->Length() : pos;
   if (pos > kernel->fileSystem->openf[id]->Length() || pos < 0) {
-    printf("Khong the seek den vi tri nay.");
-    return -1;
+    printf("Khong the seek den vi tri nay.\n");
+    kernel->machine->WriteRegister(2, -1);
+    return;
   }
   else {
     kernel->fileSystem->openf[id]->Seek(pos);
-    return pos;
+    kernel->machine->WriteRegister(2, pos);
+    return;
   }
 }
 

@@ -51,59 +51,6 @@
 //	is in machine.h.
 //----------------------------------------------------------------------
 
-/*
-Input: - User space address (int)
-- Limit of buffer (int)
-Output:- Buffer (char*)
-Purpose: Copy buffer from User memory space to System memory space
-*/
-
-
-char* User2System(int virtAddr, int limit) {
-	int i;
-	int oneChar;
-	char* kernelBuf = NULL;
-
-	kernelBuf = new char[limit + 1]; // need for terminal string
-	if (kernelBuf == NULL) {
-		return kernelBuf;
-	}
-
-	memset(kernelBuf, 0, limit + 1);
-
-	for (i = 0; i < limit; i++) {
-		kernel->machine->ReadMem(virtAddr + i, 1, &oneChar);
-		kernelBuf[i] = (char)oneChar;
-		if (oneChar == 0) break;
-	}
-
-	return kernelBuf;
-}
-
-
-/*
-Input: - User space address (int)
-- Limit of buffer (int)
-Output:- Buffer (char*)
-Purpose: Copy buffer from System memory space to User memory space
-*/
-
-int System2User(int virtAddr, int len, char* buffer) {
-	if (len < 0) return -1;
-	if (len == 0) return len;
-	int i = 0;
-	int oneChar = 0;
-
-	do {
-		oneChar = (int) buffer[i];
-		kernel->machine->WriteMem(virtAddr+i, 1, oneChar);
-		i++;
-	} while (i < len && oneChar != 0);
-
-	return i;
-	
-}
-
 
 // Increase PC
 void IncreasePC() {
@@ -301,9 +248,8 @@ ExceptionHandler(ExceptionType which)
 					int type = kernel->machine->ReadRegister(5);
 				
 					char* filename = User2System(virtAddr, MaxFileLength + 1);
-					OpenFileID res = SysOpen(filename, type);
+					SysOpen(filename, type);
 					// Mo file, tra ve id neu thanh cong, tra ve -1 neu that bai
-					kernel->machine->WriteRegister(2, res);
 					delete[] filename;
 					IncreasePC();
 					return;
@@ -313,6 +259,7 @@ ExceptionHandler(ExceptionType which)
 				case SC_Close: {
 					OpenFileID fid = kernel->machine->ReadRegister(4);
 					int res = SysClose(fid);
+					kernel->machine->WriteRegister(2, res);
 					IncreasePC();
 					return;
 					
@@ -322,14 +269,10 @@ ExceptionHandler(ExceptionType which)
 					int size = kernel->machine->ReadRegister(5);
 					OpenFileID id = kernel->machine->ReadRegister(6);
 
-					char* buffer = User2System(virtAddr, size);
+					char* buffer = new char[size];
 
-					int res = SysRead(buffer, size, id);
+					SysRead(virtAddr, buffer, size, id);
 
-					kernel->machine->WriteRegister(2, res);
-					if (res != -1 && res != -2) {
-						System2User(virtAddr, res, buffer);
-					}
 					delete buffer;
 					IncreasePC();
 					return;
@@ -343,13 +286,10 @@ ExceptionHandler(ExceptionType which)
 					int id = kernel->machine->ReadRegister(6);
 
 					// Lay du lieu
-					char* buffer = User2System(virtAddr, size);
+					char* buffer = new char[size];
 
 					// Ghi vao file
-					int res = SysWrite(buffer, size, id);
-
-					// Ghi ket qua tra ve
-					kernel->machine->WriteRegister(2, res);
+					SysWrite(virtAddr, buffer, size, id);
 
 					delete buffer;
 					IncreasePC();
@@ -361,10 +301,7 @@ ExceptionHandler(ExceptionType which)
 					int id = kernel->machine->ReadRegister(5);
 
 					// Tim den vi tri va nhan ket qua tra ve
-					int res = SysSeek(position, id);
-
-					// Ghi ket qua tra ve
-					kernel->machine->WriteRegister(2, res);
+					SysSeek(position, id);
 
 					IncreasePC();
 					return;

@@ -7,7 +7,7 @@ int main()
   int fInId,fOutId;
   char* buffer = "abcdefgh";
 
-  if( Create("fileTest.txt") == 0) {
+  if(Create("fileTest.txt")==0){
     PrintString("Tao file thanh cong nhe!\n");
   }
   else{
@@ -15,22 +15,18 @@ int main()
   }
 
   // Mo file de ghi buffer vao
-  fInId = Open("fileTest.txt", READ_WRITE);
-  PrintNum(fInId);
-  PrintChar('\n');
-  Write(buffer, 5, fInId);
+  fInId = Open("fileTest.txt", 2);
+  Write(buffer,5,fInId);
   Close(fInId);
   // Mo file de doc
-  fOutId = Open("fileTest.txt", READ_ONLY);
-  PrintNum(fOutId);
-  PrintChar('\n');
+  fOutId = Open("fileTest.txt", 3);
   // doi den vi tri 1
   Seek(1,fOutId);
 
   // Doc toi da 255 ky tu
   size = Read(result,255,fOutId);
   
-  PrintString("\nSo ky tu doc duoc: ");
+  PrintString("So ky tu doc duoc: \n");
   PrintNum(size);
   PrintChar('\n');
   PrintString(result);

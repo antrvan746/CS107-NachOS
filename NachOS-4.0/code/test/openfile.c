@@ -3,7 +3,7 @@
 int main()
 {
     char *filename;
-    char*str;
+    char *str;
     int type;
     int file_id;
     filename="fileydam.txt";
@@ -13,7 +13,6 @@ int main()
     file_id=Open(filename, type);
     if(file_id!=-1){
         PrintString("Mo file thanh cong nhe!\n");
-       
     }
     else{
         PrintString("Mo file that bai nhe!\n");

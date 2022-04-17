@@ -112,7 +112,7 @@ ifeq ($(hosttype),unknown)
 PROGRAMS = unknownhost
 else
 # change this if you create a new test program!
-PROGRAMS = halt shell matmult segments createfile openfile readwriteFile readwriteConsole
+PROGRAMS = halt shell matmult segments createfile openfile closefile readwritefile
 
 endif
 
@@ -200,12 +200,23 @@ tests: tests.o start.o
 	$(LD) $(LDFLAGS) start.o tests.o -o tests.coff
 	$(COFF2NOFF) tests.coff tests
 
-
 createfile.o: createfile.c
 	$(CC) $(CFLAGS) -c createfile.c
 createfile: createfile.o start.o
 	$(LD) $(LDFLAGS) start.o createfile.o -o createfile.coff
 	$(COFF2NOFF) createfile.coff createfile
+
+readwritefile.o: readwritefile.c
+	$(CC) $(CFLAGS) -c readwritefile.c
+readwritefile: readwritefile.o start.o
+	$(LD) $(LDFLAGS) start.o readwritefile.o -o readwritefile.coff
+	$(COFF2NOFF) readwritefile.coff readwritefile
+
+closefile.o: closefile.c
+	$(CC) $(CFLAGS) -c closefile.c
+closefile: closefile.o start.o
+	$(LD) $(LDFLAGS) start.o closefile.o -o closefile.coff
+	$(COFF2NOFF) closefile.coff closefile
 
 openfile.o: openfile.c
 	$(CC) $(CFLAGS) -c openfile.c
@@ -213,17 +224,7 @@ openfile: openfile.o start.o
 	$(LD) $(LDFLAGS) start.o openfile.o -o openfile.coff
 	$(COFF2NOFF) openfile.coff openfile
 
-readWriteFile.o: readWriteFile.c
-	$(CC) $(CFLAGS) -c readWriteFile.c
-readWriteFile: readWriteFile.o start.o
-	$(LD) $(LDFLAGS) start.o readWriteFile.o -o readWriteFile.coff
-	$(COFF2NOFF) readWriteFile.coff readWriteFile
 
-readwriteConsole.o: readwriteConsole.c
-	$(CC) $(CFLAGS) -c readwriteConsole.c
-readwriteConsole: readwriteConsole.o start.o
-	$(LD) $(LDFLAGS) start.o readwriteConsole.o -o readwriteConsole.coff
-	$(COFF2NOFF) readwriteConsole.coff readwriteConsole
 	
 
 clean:
