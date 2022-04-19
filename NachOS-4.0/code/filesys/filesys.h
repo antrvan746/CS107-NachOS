@@ -38,12 +38,12 @@
 #include "openfile.h"
 
 #define MAX_FILE_OPEN 15
-#define INPUT_TYPE 1
-#define OUTPUT_TYPE 0
-#define READONLY_TYPE 3
-#define READWRITE_TYPE 2
-#define INDEX_STDIN 1
-#define INDEX_STDOUT 0
+// #define INPUT_TYPE 1
+// #define OUTPUT_TYPE 0
+// #define READONLY_TYPE 3
+// #define READWRITE_TYPE 2
+// #define INDEX_STDIN 1
+// #define INDEX_STDOUT 0
 
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 
 				// calls to UNIX, until the real file system
@@ -59,11 +59,11 @@ class FileSystem {
 		for (int i = 0; i < MAX_FILE_OPEN; ++i) {
 			openf[i] = NULL;
 		}
-		this->Create("stdin");
-		this->Create("stdout");
+		this->Create("stdin", 0);
+		this->Create("stdout", 0);
 
-		openf[index++] = this->Open("stdin", INPUT_TYPE);
-		openf[index++] = this->Open("stdout", OUTPUT_TYPE);
+		openf[index++] = this->Open("stdin", 2);
+		openf[index++] = this->Open("stdout", 3);
 	}
 
 	~FileSystem() {
@@ -73,7 +73,16 @@ class FileSystem {
 		delete[] openf;
 	}
 
-    bool Create(char *name) {
+	bool Create(char *name) {
+    int fileDescriptor = OpenForWrite(name);
+
+    if (fileDescriptor == -1)
+      return FALSE;
+    Close(fileDescriptor);
+    return TRUE;
+  }
+
+    bool Create(char *name, int initialSize ) {
 		int fileDescriptor = OpenForWrite(name);
 
 		if (fileDescriptor == -1) 
@@ -86,11 +95,19 @@ class FileSystem {
 	  int fileDescriptor = OpenForReadWrite(name, FALSE);
 
 	  if (fileDescriptor == -1) return NULL;
+
 	  return new OpenFile(fileDescriptor);
     }
 
 	OpenFile* Open(char *name, int type) {
-		int fileDescriptor = OpenForReadWrite(name, FALSE);
+		int fileDescriptor;
+		if (type == 0)
+			fileDescriptor = OpenForReadWrite(name, FALSE);
+		else if (type == 1 || type == 2)
+			fileDescriptor = OpenForRead(name, FALSE);
+		else if (type == 3) {
+			fileDescriptor = OpenForWrite(name);
+		}
 
 		if (fileDescriptor == -1) return NULL;
 		//index++;

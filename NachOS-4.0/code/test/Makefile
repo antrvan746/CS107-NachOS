@@ -112,7 +112,7 @@ ifeq ($(hosttype),unknown)
 PROGRAMS = unknownhost
 else
 # change this if you create a new test program!
-PROGRAMS = halt shell matmult segments createfile openfile closefile readwritefile
+PROGRAMS = halt shell matmult segments createfile openfile closefile readwritefile cat copy deletefile concatenate
 
 endif
 
@@ -224,8 +224,30 @@ openfile: openfile.o start.o
 	$(LD) $(LDFLAGS) start.o openfile.o -o openfile.coff
 	$(COFF2NOFF) openfile.coff openfile
 
+deletefile.o: deletefile.c
+	$(CC) $(CFLAGS) -c deletefile.c
+deletefile: deletefile.o start.o
+	$(LD) $(LDFLAGS) start.o deletefile.o -o deletefile.coff
+	$(COFF2NOFF) deletefile.coff deletefile
 
-	
+cat.o: cat.c
+	$(CC) $(CFLAGS) -c cat.c
+cat: cat.o start.o
+	$(LD) $(LDFLAGS) start.o cat.o -o cat.coff
+	$(COFF2NOFF) cat.coff cat
+
+copy.o: copy.c
+	$(CC) $(CFLAGS) -c copy.c
+copy: copy.o start.o
+	$(LD) $(LDFLAGS) start.o copy.o -o copy.coff
+	$(COFF2NOFF) copy.coff copy
+
+concatenate.o: concatenate.c
+	$(CC) $(CFLAGS) -c concatenate.c
+concatenate: concatenate.o start.o
+	$(LD) $(LDFLAGS) start.o concatenate.o -o concatenate.coff
+	$(COFF2NOFF) concatenate.coff concatenate
+
 
 clean:
 	$(RM) -f *.o *.ii

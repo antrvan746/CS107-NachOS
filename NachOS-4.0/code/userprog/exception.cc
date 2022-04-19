@@ -232,7 +232,7 @@ ExceptionHandler(ExceptionType which)
 					int virtAddr = kernel->machine->ReadRegister(4);
 
 					// Chuyen dia chi ten file tu UserSpace sang SystemSpace
-					char* filename = User2System(virtAddr, MaxFileLength + 1);
+					char* filename = User2System(virtAddr, MaxFileLength);
 					SysCreateFile(filename);
 					delete[] filename;
 
@@ -240,21 +240,27 @@ ExceptionHandler(ExceptionType which)
 					return;
 					// Tao file thanh cong
 
+					ASSERTNOTREACHED();
+
 				}
+				break;
 
 				case SC_Open: {
 					
 					int virtAddr = kernel->machine->ReadRegister(4);
 					int type = kernel->machine->ReadRegister(5);
 				
-					char* filename = User2System(virtAddr, MaxFileLength + 1);
+					char* filename = User2System(virtAddr, MaxFileLength);
 					SysOpen(filename, type);
 					// Mo file, tra ve id neu thanh cong, tra ve -1 neu that bai
 					delete[] filename;
 					IncreasePC();
 					return;
+
+					ASSERTNOTREACHED();
 					
 				}
+				break;
 
 				case SC_Close: {
 					OpenFileID fid = kernel->machine->ReadRegister(4);
@@ -262,8 +268,11 @@ ExceptionHandler(ExceptionType which)
 					kernel->machine->WriteRegister(2, res);
 					IncreasePC();
 					return;
-					
+
+					ASSERTNOTREACHED();
 				}
+				break;
+
 				case SC_Read: {
 					int virtAddr = kernel->machine->ReadRegister(4);
 					int size = kernel->machine->ReadRegister(5);
@@ -277,7 +286,10 @@ ExceptionHandler(ExceptionType which)
 					IncreasePC();
 					return;
 
+					ASSERTNOTREACHED();
+
 				}
+				break;
 
 				case SC_Write: {
 					// Doc cac tham so dau vao
@@ -294,7 +306,10 @@ ExceptionHandler(ExceptionType which)
 					delete buffer;
 					IncreasePC();
 					return;
+
+					ASSERTNOTREACHED();
 				}
+				break;
 
 				case SC_Seek: {
 					int position = kernel->machine->ReadRegister(4);
@@ -306,7 +321,10 @@ ExceptionHandler(ExceptionType which)
 					IncreasePC();
 					return;
 
+					ASSERTNOTREACHED();
+					
 				}
+				break;
 
 				case SC_Remove: {
 					int virtAddr = kernel->machine->ReadRegister(4);

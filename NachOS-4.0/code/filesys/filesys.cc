@@ -140,6 +140,18 @@ FileSystem::FileSystem(bool format)
         freeMapFile = new OpenFile(FreeMapSector);
         directoryFile = new OpenFile(DirectorySector);
     }
+
+    // Cai dat
+    openf = new OpenFile*[15];
+	index = 0;
+	for (int i = 0; i < 15; ++i)
+	{
+		openf[i] = NULL;
+	}
+	openf[index++] = this->Open("stdin", 2);
+	openf[index++] = this->Open("stdout", 3);
+	this->Create("stdin", 0);
+	this->Create("stdout", 0);
 }
 
 //----------------------------------------------------------------------

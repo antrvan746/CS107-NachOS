@@ -7,7 +7,7 @@ int main()
   int fInId,fOutId;
   char* buffer = "abcdefgh";
 
-  if(Create("fileTest.txt")==0){
+  if(Create("fileTest.txt") == 0){
     PrintString("Tao file thanh cong nhe!\n");
   }
   else{
@@ -15,11 +15,15 @@ int main()
   }
 
   // Mo file de ghi buffer vao
-  fInId = Open("fileTest.txt", 2);
+  fInId = Open("fileTest.txt", 0);
+  PrintNum(fInId);
+  PrintChar('\n');
   Write(buffer,5,fInId);
   Close(fInId);
   // Mo file de doc
-  fOutId = Open("fileTest.txt", 3);
+  fOutId = Open("fileTest.txt", 1);
+  PrintNum(fOutId);
+  PrintChar('\n');
   // doi den vi tri 1
   Seek(1,fOutId);
 

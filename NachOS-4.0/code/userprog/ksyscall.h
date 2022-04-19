@@ -237,25 +237,33 @@ void SysCreateFile(char* filename) {
 void SysOpen(char* filename, int type) {
   int freeSlot;
 
+  // const char* stdinc = "stdin";
+  // const char* stdoutc = "stdout";
+
   OpenFile *file;
   freeSlot = kernel->fileSystem->FindFreeSlot();
   
-  if (type == INPUT_TYPE) {
-    // input co nsole stdout => he thong se doc gia tri tren man hinh console
-    kernel->machine->WriteRegister(2, 1);
-    return;
-  } 
-  else if (type == OUTPUT_TYPE) {
-    // input co nsole stdout => he thong se doc gia tri tren man hinh console
-    kernel->machine->WriteRegister(2, 1);
-    return;
-  }
-  else if (freeSlot == -1) {
+
+  if (freeSlot != -1) {
+    if (type == 2) {
+      // input console stdout => he thong se doc gia tri tren man hinh console
+      kernel->machine->WriteRegister(2, 0);
+      return;
+    } 
+    else if (type == 3) {
+      // input console stdout => he thong se doc gia tri tren man hinh console
+      kernel->machine->WriteRegister(2, 1);
+      return;
+    }
+
+
+    else if (type == 0 || type == 1) {
     file = kernel->fileSystem->Open(filename, type);
 
-    if (file != NULL) {
-      kernel->fileSystem->openf[freeSlot] = file;
-      kernel->machine->WriteRegister(2, freeSlot); // mo file thanh cong
+      if (file != NULL) {
+        kernel->fileSystem->openf[freeSlot] = file;
+        kernel->machine->WriteRegister(2, freeSlot); // mo file thanh cong
+      }
     }
   } else {
     kernel->machine->WriteRegister(2, -1);    
@@ -275,12 +283,12 @@ int SysClose(OpenFileId id) {
 }
 
 
-void SysRead(int virtAddr, char*& buffer, int charcount, OpenFileID id) {
+void SysRead(int virtAddr, char* buffer, int charcount, OpenFileID id) {
    int curPos;
    int newPos;
 
     // Kiem tra id co nam trong bang mo ta file
-   if (id < 0 || id > MAX_FILE_OPEN - 1) {
+   if (id < 2 || id > MAX_FILE_OPEN) {
      printf("Khong the doc vi id nam ngoai bang mo ta file.\n");
      kernel->machine->WriteRegister(2, -1);
      return;
@@ -294,14 +302,14 @@ void SysRead(int virtAddr, char*& buffer, int charcount, OpenFileID id) {
    }
 
    // Kiem tra truong hop doc file stdout
-   if (id == INDEX_STDOUT) {
+   if (kernel->fileSystem->openf[id]->type == 3) {
       printf("Khong the doc file stdout.\n");
       kernel->machine->WriteRegister(2, -1);
       return;
    }
 
    curPos = kernel->fileSystem->openf[id]->GetCurrentPos();
-   if (id == INDEX_STDIN) {
+   if (kernel->fileSystem->openf[id]->type == 2) {
       int size = kernel->synchConsoleIn->Read(buffer, charcount);
       System2User(virtAddr, size, buffer);
       kernel->machine->WriteRegister(2, size);
@@ -322,7 +330,7 @@ void SysWrite(int virtAddr, char*& buffer, int charcount, OpenFileID id) {
   int curPos;
   int newPos;
 
-  if (id < 0 || id > MAX_FILE_OPEN - 1) {
+  if (id < 2 || id > MAX_FILE_OPEN - 1) {
     printf("Khong the ghi vi id nam ngoai bang mo ta file.\n");
     kernel->machine->WriteRegister(2, -1);
     return;
@@ -334,7 +342,7 @@ void SysWrite(int virtAddr, char*& buffer, int charcount, OpenFileID id) {
 		return;
   }
 
-  if (kernel->fileSystem->openf[id]->type == READONLY_TYPE || kernel->fileSystem->openf[id]->type == INDEX_STDIN) {
+  if (kernel->fileSystem->openf[id]->type == 1 || kernel->fileSystem->openf[id]->type == 2) {
     printf("Khong the write file stdin hoac file only read.\n");
     kernel->machine->WriteRegister(2, -1);
 		return;
@@ -343,14 +351,14 @@ void SysWrite(int virtAddr, char*& buffer, int charcount, OpenFileID id) {
   curPos = kernel->fileSystem->openf[id]->GetCurrentPos();
   buffer = User2System(virtAddr, charcount);
 
-  if (kernel->fileSystem->openf[id]->type == READWRITE_TYPE) {
+  if (kernel->fileSystem->openf[id]->type == 0) {
     if (kernel->fileSystem->openf[id]->Write(buffer, charcount) > 0) {
         newPos = kernel->fileSystem->openf[id]->GetCurrentPos();
         kernel->machine->WriteRegister(2, newPos - curPos);
         return;
     }
   }
-  if (id == INDEX_STDOUT) {
+  if (kernel->fileSystem->openf[id]->type == 3) {
     int pos = 0;
     while (buffer[pos] != '\0') {
       kernel->synchConsoleOut->PutChar((buffer + pos)[0]);
@@ -362,7 +370,7 @@ void SysWrite(int virtAddr, char*& buffer, int charcount, OpenFileID id) {
 }
 
 void SysSeek(int pos, OpenFileID id) {
-  if (id < 0 || id > MAX_FILE_OPEN - 1) {
+  if (id < 2 || id > MAX_FILE_OPEN) {
     printf("Khong the seek vi id nam ngoai bang mo ta file.\n");
     kernel->machine->WriteRegister(2, -1);
     return;
